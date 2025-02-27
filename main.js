@@ -65,7 +65,14 @@ var app = http.createServer(function (request, response) {
             fs.readdir('./data', function(err, filelist) {
 
                 fs.readFile(`data/${title}`, 'utf8', function(err, data){
-                    var control = `<a href="/add">add</a> <a href="/update?id=${title}">update</a>`;
+                    var control = `
+                    <a href="/add">add</a>
+                    <a href="/update?id=${title}">update</a>
+                    <form action = "/delete_process" method = "post">
+                        <input type="hidden" name ="id" value = "${title}">
+                        <input type="submit" value="delete">
+                    </form>
+                    `;
                     var Body = `<h3>${title}</h3><p>${data}</p>`;
                     var template = HTMLtemplate(title, linklist(filelist), Body, control);
                     response.writeHead(200);
@@ -78,7 +85,7 @@ var app = http.createServer(function (request, response) {
         fs.readdir('./data', function(err, filelist) {
             var title = 'EU-add';
             var template = HTMLtemplate(title, linklist(filelist), `
-            <form action = "http://localhost:3000/add_process" method = "post">
+            <form action = "/add_process" method = "post">
                 <p>
                     <input type="text" name="title" placeholder ="title">
                 </p>
@@ -100,7 +107,6 @@ var app = http.createServer(function (request, response) {
         request.on('data', function(data){
             body = body + data;
         });
-        console.log(body);
         request.on('end', function(){
             var postpost = qs.parse(body);
             var post = Object.assign({}, postpost);
@@ -109,6 +115,65 @@ var app = http.createServer(function (request, response) {
             fs.writeFile(`data/${title}`, description, 'utf8', function(err){
                 response.writeHead(302, {Location : `/?id=${title}`});
                 response.end(); 
+            });
+        }); 
+    }
+    else if (pathname === "/update"){
+        fs.readdir('./data', function(err, filelist) {
+
+            fs.readFile(`data/${title}`, 'utf8', function(err, data){
+                var control = `<a href="/add">add</a> <a href="/update?id=${title}">update</a>`;
+                var Body = `
+                    <form action = "/update_process" method = "post">
+                    <input type ="hidden" name="id" value = "${title}">
+                    <p>
+                        <input type="text" name="title" placeholder ="title" value = "${title}">
+                    </p>
+                    <p>
+                        <textarea name="description" placeholder="description" >${data}</textarea>
+                    </p>
+                    <p>
+                        <input type="submit">
+                    </p>
+                    </form>
+                `;
+                var template = HTMLtemplate(title, linklist(filelist), Body, control);
+                response.writeHead(200);
+                response.end(template);
+            });
+        });
+    }
+    else if (pathname ==="/update_process"){
+        var body = '' ;
+        request.on('data', function(data){
+            body = body + data;
+        });
+        request.on('end', function(){
+            var postpost = qs.parse(body);
+            var post = Object.assign({}, postpost);
+            var id = post.id;
+            var title = post.title;
+            var description = post.description;
+            fs.rename(`data/${id}`, `data/${title}`, function(err){
+                fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+                    response.writeHead(302, {Location : `/?id=${title}`});
+                    response.end();
+                });
+            });
+        }); 
+    }
+    else if (pathname ==="/delete_process"){
+        var body = '' ;
+        request.on('data', function(data){
+            body = body + data;
+        });
+        request.on('end', function(){
+            var postpost = qs.parse(body);
+            var post = Object.assign({}, postpost);
+            var id = post.id;
+            fs.unlink(`data/${id}`, function(err){
+                response.writeHead(302, {Location : `/`});
+                response.end();
             });
         }); 
     }
