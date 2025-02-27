@@ -2,43 +2,7 @@ var http = require('http');
 var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
-
-function HTMLtemplate(title, list, body, control){
-    return `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${title}</title>
-        </head>
-        <body>
-            <h1><a href = "/">EU</a></h1>
-
-            ${list}
-            ${control}
-
-            ${body}
-        </body>
-        </html>
-        `;
-}
-
-function linklist(filelist){
-    var i = 0;
-    var list = '<ul>';
-    while(i < filelist.length){
-        if(filelist[i] == 'EU'){
-            i+=1;
-        }
-        else {
-            list = list + `<li><a href=/?id=${filelist[i]}>${filelist[i]}</a></li>`
-            i +=1;
-        }
-    };
-    list = list + '</ul>';
-    return list;
-}
+var template = require('./lib/template.js')
 
 var app = http.createServer(function (request, response) {
     var _url = request.url;
@@ -55,9 +19,9 @@ var app = http.createServer(function (request, response) {
                 fs.readFile(`data/${title}`, 'utf8', function(err, data){
                     var Body = `<h3>${title}</h3><p>${data}</p>`;
                     var control = `<a href="/add">add</a>`;
-                    var template = HTMLtemplate(title, linklist(filelist), Body, control);
+                    var html = template.html(title, template.list(filelist), Body, control);
                     response.writeHead(200);
-                    response.end(template);
+                    response.end(html);
                 });
             });
         }
@@ -74,9 +38,9 @@ var app = http.createServer(function (request, response) {
                     </form>
                     `;
                     var Body = `<h3>${title}</h3><p>${data}</p>`;
-                    var template = HTMLtemplate(title, linklist(filelist), Body, control);
+                    var html = template.html(title, template.list(filelist), Body, control);
                     response.writeHead(200);
-                    response.end(template);
+                    response.end(html);
                 });
             });
         } 
@@ -84,7 +48,7 @@ var app = http.createServer(function (request, response) {
     else if(pathname === "/add"){
         fs.readdir('./data', function(err, filelist) {
             var title = 'EU-add';
-            var template = HTMLtemplate(title, linklist(filelist), `
+            var html = template.html(title, template.list(filelist), `
             <form action = "/add_process" method = "post">
                 <p>
                     <input type="text" name="title" placeholder ="title">
@@ -97,7 +61,7 @@ var app = http.createServer(function (request, response) {
                 </p>
             </form>`, '');
             response.writeHead(200);
-            response.end(template);         
+            response.end(html);         
             
         });
     }
@@ -137,9 +101,9 @@ var app = http.createServer(function (request, response) {
                     </p>
                     </form>
                 `;
-                var template = HTMLtemplate(title, linklist(filelist), Body, control);
+                var html = template.html(title, template.list(filelist), Body, control);
                 response.writeHead(200);
-                response.end(template);
+                response.end(html);
             });
         });
     }
